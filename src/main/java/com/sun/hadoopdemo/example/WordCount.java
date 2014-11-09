@@ -13,6 +13,10 @@ import java.util.StringTokenizer;
 /**
  * Created by louis on 14-11-6.
  */
+
+/*
+    Old API
+ */
 public class WordCount {
     public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, Text, IntWritable> {
         private final static IntWritable one = new IntWritable(1);
