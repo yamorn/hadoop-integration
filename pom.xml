@@ -45,7 +45,6 @@
             <version>1.3</version>
             <scope>test</scope>
         </dependency>
-
         <!-- log -->
         <dependency>
             <groupId>org.slf4j</groupId>
