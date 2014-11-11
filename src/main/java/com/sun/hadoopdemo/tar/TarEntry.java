@@ -1,18 +1,18 @@
 /**
  * Copyright 2012 Kamran Zafar 
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License. 
  * You may obtain a copy of the License at 
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software 
  * distributed under the License is distributed on an "AS IS" BASIS, 
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. 
- * 
+ *
  */
 
 package com.sun.hadoopdemo.tar;
@@ -26,41 +26,46 @@ import java.io.IOException;
 import java.util.Date;
 
 /**
- * @author Kamran Zafar
- * 
+ * @author Kamran Zafar,Louis
+ *
  */
-public class TarEntry implements WritableComparable<TarEntry>{
+public class TarEntry implements WritableComparable<TarEntry> {
 	protected File file;
 	protected TarHeader header;
+	protected byte[] content;
 
 	private TarEntry() {
 		this.file = null;
+		content=null;
 		header = new TarHeader();
 	}
 
 	public TarEntry(File file, String entryName) {
 		this();
 		this.file = file;
+		content=null;
 		this.extractTarHeader(entryName);
 	}
 
-	public TarEntry(byte[] headerBuf) {
+	public TarEntry(byte[] headerBuf,byte[] content) {
 		this();
 		this.parseTarHeader(headerBuf);
+		this.content=content;
 	}
 
 	/**
 	 * Constructor to create an entry from an existing TarHeader object.
-	 * 
+	 *
 	 * This method is useful to add new entries programmatically (e.g. for
 	 * adding files or directories that do not exist in the file system).
-	 * 
+	 *
 	 * @param header
-	 * 
+	 *
 	 */
-	public TarEntry(TarHeader header) {
+	public TarEntry(TarHeader header,byte[] content) {
 		this.file = null;
 		this.header = header;
+		this.content=content;
 	}
 
 	public boolean equals(TarEntry it) {
@@ -73,6 +78,10 @@ public class TarEntry implements WritableComparable<TarEntry>{
 
 	public TarHeader getHeader() {
 		return header;
+	}
+
+	public byte[] getContent() {
+		return content;
 	}
 
 	public String getName() {
@@ -151,7 +160,7 @@ public class TarEntry implements WritableComparable<TarEntry>{
 
 	/**
 	 * Checks if the org.kamrazafar.jtar entry is a directory
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean isDirectory() {
@@ -171,7 +180,7 @@ public class TarEntry implements WritableComparable<TarEntry>{
 
 	/**
 	 * Extract header from File
-	 * 
+	 *
 	 * @param entryName
 	 */
 	public void extractTarHeader(String entryName) {
@@ -180,7 +189,7 @@ public class TarEntry implements WritableComparable<TarEntry>{
 
 	/**
 	 * Calculate checksum
-	 * 
+	 *
 	 * @param buf
 	 * @return
 	 */
@@ -196,7 +205,7 @@ public class TarEntry implements WritableComparable<TarEntry>{
 
 	/**
 	 * Writes the header to the byte buffer
-	 * 
+	 *
 	 * @param outbuf
 	 */
 	public void writeEntryHeader(byte[] outbuf) {
@@ -236,8 +245,7 @@ public class TarEntry implements WritableComparable<TarEntry>{
 
 	/**
 	 * Parses the tar header to the byte buffer
-	 * 
-	 * @param header
+	 *
 	 * @param bh
 	 */
 	public void parseTarHeader(byte[] bh) {

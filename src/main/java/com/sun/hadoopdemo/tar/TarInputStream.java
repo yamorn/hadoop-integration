@@ -151,7 +151,23 @@ public class TarInputStream extends FilterInputStream implements Seekable {
 		}
 
 		if (!eof) {
-			currentEntry = new TarEntry(header);
+			//save current status
+			long tempFileSize=currentFileSize;
+			long tempBytesRead = bytesRead;
+			//get content length
+			long realSize=Octal.parseOctal(header,124,12);
+			byte[] content=new byte[(int)realSize];
+			//read content
+			int d=read(content, 0, (int)realSize);
+			if(d==-1){
+				// I suspect file corruption
+				throw new IOException("Possible tar file corruption");
+			}
+			currentEntry = new TarEntry(header,content);
+			//restore all status
+			seek(tempBytesRead);
+			currentFileSize=tempFileSize;
+			bytesRead=tempBytesRead;
 		}
 
 		return currentEntry;
