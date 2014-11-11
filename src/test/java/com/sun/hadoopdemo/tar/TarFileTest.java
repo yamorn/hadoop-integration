@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static org.junit.Assert.*;
@@ -21,9 +22,9 @@ public class TarFileTest {
     public static void setUp() throws IOException{
         Configuration conf=new Configuration();
         conf.set("fs.default.name", "hdfs://192.168.0.14:9000");
-        conf.set("mapred.input.dir", "/usr/local/louis/tar/input/test.tar");
+        conf.set("mapred.input.dir", "/usr/local/louis/tar/input/pic.tar");
         conf.set("mapred.output.dir", "/usr/local/louis/tar/output");
-        Path path=new Path("/usr/local/louis/tar/input/test.tar");
+        Path path=new Path("/usr/local/louis/tar/input/pic.tar");
         FileSystem fs= FileSystem.get(conf);
         reader=new TarFile.Reader(fs,path,conf);
     }
@@ -36,8 +37,16 @@ public class TarFileTest {
     }
     @Test
     public void hasNextEntryTest() throws IOException {
+        int i=1;
         while (reader.hasNextEntry()) {
             System.out.println(reader.getCurrentEntry().getName());
+            byte[] content=reader.getCurrentEntry().getContent();
+            System.out.println(content.length);
+            FileOutputStream fileOutputStream = new FileOutputStream("D:/test/tt_" + (i++) + ".jpg");
+            fileOutputStream.write(content,0,content.length);
+            fileOutputStream.close();
+
+//            System.out.println(new String(content,0,content.length));
         }
     }
     @AfterClass
