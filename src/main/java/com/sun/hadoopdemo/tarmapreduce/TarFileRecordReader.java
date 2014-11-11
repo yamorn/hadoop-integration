@@ -18,8 +18,6 @@ import java.io.IOException;
  */
 public class TarFileRecordReader extends RecordReader<TarHeader, TarEntry> {
     private TarFile.Reader in;
-    private TarHeader key;
-    private TarEntry value;
     private long start;
     private long end;
 

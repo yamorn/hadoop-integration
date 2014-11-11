@@ -2,6 +2,7 @@ package com.sun.hadoopdemo.tarmapreduce;
 
 import com.sun.hadoopdemo.tar.TarEntry;
 import com.sun.hadoopdemo.tar.TarHeader;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -23,5 +24,10 @@ public class TarFileInputFormat extends FileInputFormat<TarHeader,TarEntry> {
     @Override
     public List<InputSplit> getSplits(JobContext job) throws IOException {
         return super.getSplits(job);
+    }
+
+    @Override
+    protected List<FileStatus> listStatus(JobContext job) throws IOException {
+        return super.listStatus(job);
     }
 }

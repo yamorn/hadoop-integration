@@ -17,24 +17,23 @@
 
 package com.sun.hadoopdemo.tar;
 
-import org.apache.hadoop.fs.HasFileDescriptor;
 import org.apache.hadoop.fs.PositionedReadable;
 import org.apache.hadoop.fs.Seekable;
 
-import java.io.*;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
- * @author Kamran Zafar
+ * @author Kamran Zafar,Louis
  * 
  */
-public class TarInputStream extends FilterInputStream
-		implements Seekable, PositionedReadable, Closeable {
+public class TarInputStream extends FilterInputStream implements Seekable {
 
 	private static final int SKIP_BUFFER_SIZE = 2048;
 	private TarEntry currentEntry;
 	private long currentFileSize;
 	private long bytesRead;
-	private boolean defaultSkip = false;
 
 	public TarInputStream(InputStream in) {
 		super(in);
@@ -123,7 +122,7 @@ public class TarInputStream extends FilterInputStream
 	 * @return TarEntry
 	 * @throws java.io.IOException
 	 */
-	public TarEntry getNextEntry() throws IOException {
+	public synchronized TarEntry getNextEntry() throws IOException {
 		closeCurrentEntry();
 
 		byte[] header = new byte[TarConstants.HEADER_BLOCK];
@@ -214,21 +213,12 @@ public class TarInputStream extends FilterInputStream
 	}
 
 	/**
-	 * Skips 'n' bytes on the InputStream<br>
+	 * Skips 'n' bytes on the InputStream
 	 * Overrides default implementation of skip
 	 * 
 	 */
 	@Override
 	public long skip(long n) throws IOException {
-		if (defaultSkip) {
-			// use skip method of parent stream
-			// may not work if skip not implemented by parent
-			long bs = super.skip(n);
-			bytesRead += bs;
-
-			return bs;
-		}
-
 		if (n <= 0) {
 			return 0;
 		}
@@ -247,32 +237,13 @@ public class TarInputStream extends FilterInputStream
 		return n - left;
 	}
 
-	public boolean isDefaultSkip() {
-		return defaultSkip;
-	}
-
-	public void setDefaultSkip(boolean defaultSkip) {
-		this.defaultSkip = defaultSkip;
+	public synchronized boolean hasNextTarEntry() throws IOException {
+		return getNextEntry()!=null;
 	}
 
 	@Override
-	public int read(long position, byte[] buffer, int offset, int length) throws IOException {
-		return ((PositionedReadable)in).read(position, buffer, offset, length);
-	}
-
-	@Override
-	public void readFully(long position, byte[] buffer, int offset, int length) throws IOException {
-		((PositionedReadable)in).readFully(position, buffer, offset, length);
-	}
-
-	@Override
-	public void readFully(long position, byte[] buffer) throws IOException {
-		((PositionedReadable)in).readFully(position, buffer, 0, buffer.length);
-	}
-
-	@Override
-	public synchronized void seek(long pos) throws IOException {
-		((Seekable)in).seek(pos);
+	public void seek(long l) throws IOException {
+		((Seekable)in).seek(l);
 	}
 
 	@Override
@@ -281,17 +252,7 @@ public class TarInputStream extends FilterInputStream
 	}
 
 	@Override
-	public boolean seekToNewSource(long targetPos) throws IOException {
-		return ((Seekable)in).seekToNewSource(targetPos);
-	}
-
-	public boolean hasNextTarEntry() throws IOException{
-		long pos=getCurrentOffset();
-		boolean result=true;
-		if(getNextEntry()==null){
-			result=false;
-		}
-		seek(pos);
-		return result;
+	public boolean seekToNewSource(long l) throws IOException {
+		return ((Seekable)in).seekToNewSource(l);
 	}
 }
