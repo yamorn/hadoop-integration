@@ -233,16 +233,31 @@ public class TarHeader implements WritableComparable<TarHeader> {
 
     @Override
     public int compareTo(TarHeader o) {
-        return 0;
+        return (int)(this.modTime-o.modTime);
     }
+
 
     @Override
     public void write(DataOutput out) throws IOException {
-
+        out.writeChars(name.toString());
+        out.writeInt(mode);
+        out.writeInt(userId);
+        out.writeInt(groupId);
+        out.writeLong(size);
+        out.writeLong(modTime);
+        out.writeInt(checkSum);
+        out.writeByte(linkFlag);
+        out.writeChars(linkName.toString());
+        out.writeChars(magic.toString());
+        out.writeChars(userName.toString());
+        out.writeChars(groupName.toString());
+        out.writeInt(devMajor);
+        out.writeInt(devMinor);
+        out.writeChars(namePrefix.toString());
     }
 
     @Override
     public void readFields(DataInput in) throws IOException {
-
+//        name.append(in.read)
     }
 }

@@ -302,11 +302,24 @@ public class TarEntry implements WritableComparable<TarEntry> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-
+		byte[] header=new byte[TarConstants.HEADER_BLOCK];
+		writeEntryHeader(header);
+		// step 1
+		out.write(header);
+		// step 2
+		out.write(content);
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
+		byte[] header=new byte[TarConstants.HEADER_BLOCK];
+		// step 1
+		in.readFully(header);
 
+		// step 2
+		parseTarHeader(header);
+		byte[] content = new byte[(int)this.header.size];
+		in.readFully(content);
+		this.content=content;
 	}
 }
