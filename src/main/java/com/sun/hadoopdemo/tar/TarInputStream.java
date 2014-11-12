@@ -28,12 +28,16 @@ import java.io.InputStream;
  * @author Kamran Zafar,Louis
  * 
  */
-public class TarInputStream extends FilterInputStream implements Seekable {
-
+public class TarInputStream extends FilterInputStream {
 	private static final int SKIP_BUFFER_SIZE = 2048;
 	private TarEntry currentEntry;
 	private long currentFileSize;
+	private long readPastMark;
 	private long bytesRead;
+
+	private TarEntry markCurrentEntry;
+	private long markCurrentFileSize;
+	private long markBytesRead;
 
 	public TarInputStream(InputStream in) {
 		super(in);
@@ -42,6 +46,7 @@ public class TarInputStream extends FilterInputStream implements Seekable {
 					"In is not an instance of Seekable or PositionedReadable");
 		}
 		currentFileSize = 0;
+		readPastMark = 0;
 		bytesRead = 0;
 	}
 
@@ -50,21 +55,34 @@ public class TarInputStream extends FilterInputStream implements Seekable {
 		return false;
 	}
 
-	/**
-	 * Not supported
-	 * 
-	 */
 	@Override
 	public synchronized void mark(int readlimit) {
 	}
 
-	/**
-	 * Not supported
-	 * 
-	 */
 	@Override
 	public synchronized void reset() throws IOException {
-		throw new IOException("mark/reset not supported");
+	}
+
+	/**
+	 * private method
+	 * @param readlimit	Must be in multiples of 512
+	 */
+	private synchronized void _mark(int readlimit){
+		readPastMark=readlimit;
+		markCurrentEntry=currentEntry;
+		markCurrentFileSize=currentFileSize;
+		markBytesRead=bytesRead;
+	}
+
+	/**
+	 * private method
+	 * @throws IOException
+	 */
+	private synchronized void _reset() throws IOException{
+		seek(readPastMark);
+		currentEntry=markCurrentEntry;
+		currentFileSize=markCurrentFileSize;
+		bytesRead=markBytesRead;
 	}
 
 	/**
@@ -109,7 +127,6 @@ public class TarInputStream extends FilterInputStream implements Seekable {
 			if (currentEntry != null) {
 				currentFileSize += br;
 			}
-
 			bytesRead += br;
 		}
 
@@ -151,36 +168,23 @@ public class TarInputStream extends FilterInputStream implements Seekable {
 		}
 
 		if (!eof) {
-			//save current status
-			long tempFileSize=currentFileSize;
-			long tempBytesRead = bytesRead;
+			_mark((int)bytesRead);
 			//get content length
 			long realSize=Octal.parseOctal(header,124,12);
 			byte[] content=new byte[(int)realSize];
 			//read content
-			int d=read(content, 0, (int)realSize);
+			int d=super.read(content, 0, (int) realSize);
 			if(d==-1){
 				// I suspect file corruption
 				throw new IOException("Possible tar file corruption");
 			}
+			_reset();
 			currentEntry = new TarEntry(header,content);
-			//restore all status
-			seek(tempBytesRead);
-			currentFileSize=tempFileSize;
-			bytesRead=tempBytesRead;
 		}
 
 		return currentEntry;
 	}
 
-	/**
-	 * Returns the current offset (in bytes) from the beginning of the stream. 
-	 * This can be used to find out at which point in a tar file an entry's content begins, for instance. 
-	 */
-	public long getCurrentOffset() {
-		return bytesRead;
-	}
-	
 	/**
 	 * Closes the current tar entry
 	 * 
@@ -254,21 +258,48 @@ public class TarInputStream extends FilterInputStream implements Seekable {
 	}
 
 	public synchronized boolean hasNextTarEntry() throws IOException {
-		return getNextEntry()!=null;
+		_mark((int)bytesRead);
+		closeCurrentEntry();
+		byte[] header = new byte[TarConstants.HEADER_BLOCK];
+		byte[] theader = new byte[TarConstants.HEADER_BLOCK];
+		int tr = 0;
+
+		// Read full header
+		while (tr < TarConstants.HEADER_BLOCK) {
+			int res = super.read(theader, 0, TarConstants.HEADER_BLOCK - tr);
+			if (res < 0) {
+				break;
+			}
+			System.arraycopy(theader, 0, header, tr, res);
+			tr += res;
+		}
+
+		// Check if record is null
+		boolean eof = true;
+		for (byte b : header) {
+			if (b != 0) {
+				eof = false;
+				break;
+			}
+		}
+		_reset();
+		return !eof;
 	}
 
-	@Override
-	public void seek(long l) throws IOException {
+	/**
+	 * private method
+	 * @param l	 Must be in multiples of 512
+	 * @throws IOException
+	 */
+	private void seek(long l) throws IOException {
 		((Seekable)in).seek(l);
 	}
 
-	@Override
-	public long getPos() throws IOException {
-		return ((Seekable)in).getPos();
-	}
-
-	@Override
-	public boolean seekToNewSource(long l) throws IOException {
-		return ((Seekable)in).seekToNewSource(l);
+	/**
+	 * Returns the current offset (in bytes) from the beginning of the stream.
+	 * This can be used to find out at which point in a tar file an entry's content begins, for instance.
+	 */
+	public long getCurrentOffset() {
+		return bytesRead;
 	}
 }
