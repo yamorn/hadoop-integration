@@ -12,6 +12,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 
@@ -23,7 +26,7 @@ public class TarInputStreamTest {
     public static void init() throws IOException{
         Configuration conf=new Configuration();
         conf.set("fs.default.name", "hdfs://localhost:9000");
-        Path path=new Path("/user/louis/input/test.tar");
+        Path path=new Path("/user/louis/input/pic.tar");
         FileSystem fs=FileSystem.get(URI.create("/"),conf);
         tarInputStream = new TarInputStream(fs.open(path));
 //        FSDataInputStream
@@ -36,10 +39,13 @@ public class TarInputStreamTest {
 //            System.out.println(tarInputStream.getCurrentOffset());
 //        }
 //        System.out.println(tarInputStream.getCurrentOffset());
+        int i=1;
         while (tarInputStream.hasNextTarEntry()) {
-            entry=tarInputStream.getNextEntry();
-
-            System.out.println(entry.getName()+" length:"+tarInputStream.getCurrentEntry().getSize()+" offset="+ tarInputStream.getCurrentOffset());
+            entry=tarInputStream.getCurrentEntry();
+            FileOutputStream out = new FileOutputStream(new File("/home/louis/test/picc/zzz_" + (i++) + ".jpg"));
+            out.write(entry.getContent());
+            out.close();
+            System.out.println(entry.getName()+" length:"+tarInputStream.getCurrentEntry().getSize()+" offset="+ tarInputStream.getPos());
         }
     }
     @Test
@@ -53,6 +59,16 @@ public class TarInputStreamTest {
 //        System.out.println(tarInputStream.hasNextTarEntry());
 //        System.out.println("pos="+tarInputStream.getCurrentOffset()+" curEntryName="+tarInputStream.getCurrentEntry().getName());
 
+    }
+    @Test
+    @Ignore
+    public void indexTarEntryHeaderTest() throws IOException{
+//        tarInputStream.getNextEntry();
+//        tarInputStream.getNextEntry();
+        long offset=tarInputStream.getPos();
+        System.out.println("offset="+offset);
+        long index=tarInputStream.indexTarEntryHeader(offset, 1000000);
+        System.out.println(index+"====");
     }
     @AfterClass
     public static void clean() throws IOException{
