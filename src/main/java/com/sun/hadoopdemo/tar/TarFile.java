@@ -30,16 +30,27 @@ public class TarFile {
         }
 
         public synchronized long getCurrentOffset() throws IOException{
-            return in.getCurrentOffset();
+            return in.getPos();
 
         }
 
-        public TarEntry getCurrentEntry(){
+        public synchronized TarEntry getCurrentEntry(){
             return in.getCurrentEntry();
+        }
+
+        public synchronized void seek(long l) throws IOException{
+            in.seek(l);
         }
 
         public synchronized void close() throws IOException {
             in.close();
+        }
+        public synchronized long skip(long l) throws IOException{
+            return in.skip(l);
+        }
+
+        public synchronized long indexTarEntryHeader(long offset,long end) throws IOException {
+            return in.indexTarEntryHeader(offset, end);
         }
     }
 }

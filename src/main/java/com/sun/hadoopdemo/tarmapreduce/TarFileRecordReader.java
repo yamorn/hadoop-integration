@@ -23,12 +23,23 @@ public class TarFileRecordReader extends RecordReader<TarHeader, TarEntry> {
 
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
-        Path path = ((FileSplit) split).getPath();
+        FileSplit fileSplit=(FileSplit)split;
+        Path path = fileSplit.getPath();
         Configuration conf = context.getConfiguration();
         FileSystem fs = path.getFileSystem(conf);
+        start=fileSplit.getStart();
         in = new TarFile.Reader(fs, path, conf);
-        end = ((FileSplit) split).getStart() + split.getLength();
-        start = in.getCurrentOffset();
+        end = fileSplit.getStart() + split.getLength();
+        if(start!=0){
+            in.seek(start);
+            long index=in.indexTarEntryHeader(start,end);
+            System.out.println("index="+index+ " start="+start);
+            in.skip(index - start);
+            System.out.println("skip:"+(index - start));
+            System.out.println("offset="+in.getCurrentOffset()+" "+in.getCurrentEntry());
+            start=index;
+        }
+        System.out.println("Block init:split start "+start+" ,end at    "+end);
     }
 
     @Override

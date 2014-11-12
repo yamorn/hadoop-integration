@@ -93,4 +93,16 @@ public class TarUtils {
 
 		return tmp.toString();
 	}
+
+	public static boolean isTarEntryHeader(byte[] header) {
+		String magic = TarHeader.parseName(header, 257, 8).toString();
+		return "ustar  ".equals(magic);
+	}
+	private static long computeCheckSum(byte[] buf) {
+		long sum = 0L;
+		for (byte aBuf : buf) {
+			sum += (long) (255 & aBuf);
+		}
+		return sum;
+	}
 }

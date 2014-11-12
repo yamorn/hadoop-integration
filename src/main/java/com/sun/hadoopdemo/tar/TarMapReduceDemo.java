@@ -8,7 +8,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.IOException;
 
@@ -25,7 +26,7 @@ public class TarMapReduceDemo {
 
         @Override
         protected void map(TarHeader key, TarEntry value, Context context) throws IOException, InterruptedException {
-            System.out.printf("File:%s\n",value.getName());
+            System.out.printf("Map File:%s\n",value.getName());
             context.write(key, value);
         }
 
@@ -50,11 +51,11 @@ public class TarMapReduceDemo {
             int i=1;
             try {
                 for (TarEntry entry : values) {
-                    System.out.println(entry.getName()+"================");
-                    System.out.println(entry.getContent().length+"+++++++++++");
-                    byte[] content=entry.getContent();
-//                    ImageUtils.pressText("水印 水印",content,OUTPUT_DIR+fileName+"_"+i+".jpg","宋体", Font.BOLD, Color.white, 80, 0, 0, 0.5f);
-                    ImageUtils.gray(content, OUTPUT_DIR + fileName + "_" + i + ".jpg");
+                    System.out.println("name="+entry.getName()+", length="+entry.getContent().length);
+//                    System.out.println(entry.getContent().length+"+++++++++++");
+//                    byte[] content=entry.getContent();
+////                    ImageUtils.pressText("水印 水印",content,OUTPUT_DIR+fileName+"_"+i+".jpg","宋体", Font.BOLD, Color.white, 80, 0, 0, 0.5f);
+//                    ImageUtils.gray(content, OUTPUT_DIR + fileName + "_" + i + ".jpg");
                     ++i;
                 }
             } catch (Exception e) {
@@ -72,22 +73,31 @@ public class TarMapReduceDemo {
     }
     public static void main(String[] args) throws Exception{
         Configuration conf = new Configuration();
-        System.setProperty("HADOOP_USER_NAME", "hadoop");
+//        System.setProperty("HADOOP_USER_NAME", "hadoop");
         String otherArgs[] = new String[]{
-                "hdfs://192.168.0.14:9000/usr/local/louis/tar/input/test.tar",
-                "hdfs://192.168.0.14:9000/usr/local/louis/tar/output"
+//                "hdfs://192.168.0.14:9000/usr/local/louis/tar/input/test.tar",
+//                "hdfs://192.168.0.14:9000/usr/local/louis/tar/output"
+                "hdfs://localhost:9000/user/louis/input/pic.tar",
+                "hdfs://localhost:9000/user/louis/output"
+
         };
-        Job job = new Job(conf, "wordCount");
+        Job job = new Job(conf, "TarMapReduceDemo");
         job.setJarByClass(TarMapReduceDemo.class);
 
         job.setMapperClass(TarMapper.class);
         job.setReducerClass(TarReduce.class);
 
+        job.setMapOutputKeyClass(TarHeader.class);
+        job.setMapOutputValueClass(TarEntry.class);
+
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
 
-        TarFileInputFormat.addInputPath(job,new Path(otherArgs[0]));
-        FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+        job.setInputFormatClass(TarFileInputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
+
+        FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
+        TextOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
 
         System.exit(job.waitForCompletion(true) ? 0 : 1);
 

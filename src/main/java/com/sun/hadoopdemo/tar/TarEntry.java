@@ -30,21 +30,12 @@ import java.util.Date;
  *
  */
 public class TarEntry implements WritableComparable<TarEntry> {
-	protected File file;
 	protected TarHeader header;
 	protected byte[] content;
 
 	private TarEntry() {
-		this.file = null;
 		content=null;
 		header = new TarHeader();
-	}
-
-	public TarEntry(File file, String entryName) {
-		this();
-		this.file = file;
-		content=null;
-		this.extractTarHeader(entryName);
 	}
 
 	public TarEntry(byte[] headerBuf,byte[] content) {
@@ -59,11 +50,13 @@ public class TarEntry implements WritableComparable<TarEntry> {
 	 * This method is useful to add new entries programmatically (e.g. for
 	 * adding files or directories that do not exist in the file system).
 	 *
-	 * @param header
 	 *
 	 */
+	public TarEntry(byte[] headerBuf){
+		this();
+		this.parseTarHeader(headerBuf);
+	}
 	public TarEntry(TarHeader header,byte[] content) {
-		this.file = null;
 		this.header = header;
 		this.content=content;
 	}
@@ -146,9 +139,6 @@ public class TarEntry implements WritableComparable<TarEntry> {
 		return new Date(header.modTime * 1000);
 	}
 
-	public File getFile() {
-		return this.file;
-	}
 
 	public long getSize() {
 		return header.size;
@@ -164,8 +154,6 @@ public class TarEntry implements WritableComparable<TarEntry> {
 	 * @return
 	 */
 	public boolean isDirectory() {
-		if (this.file != null)
-			return this.file.isDirectory();
 
 		if (header != null) {
 			if (header.linkFlag == TarHeader.LF_DIR)
@@ -176,15 +164,6 @@ public class TarEntry implements WritableComparable<TarEntry> {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Extract header from File
-	 *
-	 * @param entryName
-	 */
-	public void extractTarHeader(String entryName) {
-		header = TarHeader.createHeader(entryName, file.length(), file.lastModified() / 1000, file.isDirectory());
 	}
 
 	/**

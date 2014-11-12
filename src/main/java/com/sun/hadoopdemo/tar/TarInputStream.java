@@ -19,6 +19,7 @@ package com.sun.hadoopdemo.tar;
 
 import org.apache.hadoop.fs.PositionedReadable;
 import org.apache.hadoop.fs.Seekable;
+import org.apache.tools.tar.*;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -33,11 +34,9 @@ public class TarInputStream extends FilterInputStream {
 	private TarEntry currentEntry;
 	private long currentFileSize;
 	private long readPastMark;
-	private long bytesRead;
 
 	private TarEntry markCurrentEntry;
 	private long markCurrentFileSize;
-	private long markBytesRead;
 
 	public TarInputStream(InputStream in) {
 		super(in);
@@ -47,7 +46,6 @@ public class TarInputStream extends FilterInputStream {
 		}
 		currentFileSize = 0;
 		readPastMark = 0;
-		bytesRead = 0;
 	}
 
 	@Override
@@ -71,7 +69,6 @@ public class TarInputStream extends FilterInputStream {
 		readPastMark=readlimit;
 		markCurrentEntry=currentEntry;
 		markCurrentFileSize=currentFileSize;
-		markBytesRead=bytesRead;
 	}
 
 	/**
@@ -82,7 +79,6 @@ public class TarInputStream extends FilterInputStream {
 		seek(readPastMark);
 		currentEntry=markCurrentEntry;
 		currentFileSize=markCurrentFileSize;
-		bytesRead=markBytesRead;
 	}
 
 	/**
@@ -91,7 +87,7 @@ public class TarInputStream extends FilterInputStream {
 	 * @see java.io.FilterInputStream#read()
 	 */
 	@Override
-	public int read() throws IOException {
+	public synchronized int read() throws IOException {
 		byte[] buf = new byte[1];
 		int res = this.read(buf, 0, 1);
 		if (res != -1) {
@@ -100,7 +96,7 @@ public class TarInputStream extends FilterInputStream {
 		return res;
 	}
 
-	public TarEntry getCurrentEntry() {
+	public synchronized TarEntry getCurrentEntry() {
 		return currentEntry;
 	}
 
@@ -112,7 +108,7 @@ public class TarInputStream extends FilterInputStream {
 	 * @see java.io.FilterInputStream#read(byte[], int, int)
 	 */
 	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
+	public synchronized int read(byte[] b, int off, int len) throws IOException {
 		if (currentEntry != null) {
 			if (currentFileSize == currentEntry.getSize()) {
 				return -1;
@@ -127,7 +123,6 @@ public class TarInputStream extends FilterInputStream {
 			if (currentEntry != null) {
 				currentFileSize += br;
 			}
-			bytesRead += br;
 		}
 
 		return br;
@@ -139,9 +134,8 @@ public class TarInputStream extends FilterInputStream {
 	 * @return TarEntry
 	 * @throws java.io.IOException
 	 */
-	public synchronized TarEntry getNextEntry() throws IOException {
+	private synchronized TarEntry getNextEntry() throws IOException {
 		closeCurrentEntry();
-
 		byte[] header = new byte[TarConstants.HEADER_BLOCK];
 		byte[] theader = new byte[TarConstants.HEADER_BLOCK];
 		int tr = 0;
@@ -157,7 +151,6 @@ public class TarInputStream extends FilterInputStream {
 			System.arraycopy(theader, 0, header, tr, res);
 			tr += res;
 		}
-
 		// Check if record is null
 		boolean eof = true;
 		for (byte b : header) {
@@ -168,9 +161,9 @@ public class TarInputStream extends FilterInputStream {
 		}
 
 		if (!eof) {
-			_mark((int)bytesRead);
-			//get content length
-			long realSize=Octal.parseOctal(header,124,12);
+			_mark((int) getPos());
+
+			long realSize = Octal.parseOctal(header, 124, 12);
 			byte[] content=new byte[(int)realSize];
 			//read content
 			int d=super.read(content, 0, (int) realSize);
@@ -181,7 +174,7 @@ public class TarInputStream extends FilterInputStream {
 			_reset();
 			currentEntry = new TarEntry(header,content);
 		}
-
+		System.out.println("offset="+getPos());
 		return currentEntry;
 	}
 
@@ -190,7 +183,7 @@ public class TarInputStream extends FilterInputStream {
 	 * 
 	 * @throws java.io.IOException
 	 */
-	protected void closeCurrentEntry() throws IOException {
+	protected synchronized void closeCurrentEntry() throws IOException {
 		if (currentEntry != null) {
 			if (currentEntry.getSize() > currentFileSize) {
 				// Not fully read, skip rest of the bytes
@@ -218,9 +211,9 @@ public class TarInputStream extends FilterInputStream {
 	 * 
 	 * @throws java.io.IOException
 	 */
-	protected void skipPad() throws IOException {
-		if (bytesRead > 0) {
-			int extra = (int) (bytesRead % TarConstants.DATA_BLOCK);
+	protected synchronized void skipPad() throws IOException {
+		if (getPos() > 0) {
+			int extra = (int) (getPos() % TarConstants.DATA_BLOCK);
 
 			if (extra > 0) {
 				long bs = 0;
@@ -238,7 +231,7 @@ public class TarInputStream extends FilterInputStream {
 	 * 
 	 */
 	@Override
-	public long skip(long n) throws IOException {
+	public synchronized long skip(long n) throws IOException {
 		if (n <= 0) {
 			return 0;
 		}
@@ -258,40 +251,66 @@ public class TarInputStream extends FilterInputStream {
 	}
 
 	public synchronized boolean hasNextTarEntry() throws IOException {
-		_mark((int)bytesRead);
-		closeCurrentEntry();
+//		_mark((int)bytesRead);
+//		closeCurrentEntry();
+//		byte[] header = new byte[TarConstants.HEADER_BLOCK];
+//		byte[] theader = new byte[TarConstants.HEADER_BLOCK];
+//		int tr = 0;
+//
+//		// Read full header
+//		while (tr < TarConstants.HEADER_BLOCK) {
+//			int res = super.read(theader, 0, TarConstants.HEADER_BLOCK - tr);
+//			if (res < 0) {
+//				break;
+//			}
+//			System.arraycopy(theader, 0, header, tr, res);
+//			tr += res;
+//		}
+//
+//		// Check if record is null
+//		boolean eof = true;
+//		for (byte b : header) {
+//			if (b != 0) {
+//				eof = false;
+//				break;
+//			}
+//		}
+//		_reset();
+//		return !eof;
+		return getNextEntry()!=null;
+	}
+
+	public synchronized long indexTarEntryHeader(long offset,long end) throws IOException{
+		_mark((int)offset);
+		long index=offset;
 		byte[] header = new byte[TarConstants.HEADER_BLOCK];
 		byte[] theader = new byte[TarConstants.HEADER_BLOCK];
-		int tr = 0;
+		do{
+			int tr = 0;
+			// Read full header
+			while (tr < TarConstants.HEADER_BLOCK) {
+				int res = read(theader, 0, TarConstants.HEADER_BLOCK - tr);
 
-		// Read full header
-		while (tr < TarConstants.HEADER_BLOCK) {
-			int res = super.read(theader, 0, TarConstants.HEADER_BLOCK - tr);
-			if (res < 0) {
-				break;
-			}
-			System.arraycopy(theader, 0, header, tr, res);
-			tr += res;
-		}
+				if (res < 0) {
+					break;
+				}
 
-		// Check if record is null
-		boolean eof = true;
-		for (byte b : header) {
-			if (b != 0) {
-				eof = false;
-				break;
+				System.arraycopy(theader, 0, header, tr, res);
+				tr += res;
 			}
+		}while(!TarUtils.isTarEntryHeader(header)&&(index=index+TarConstants.HEADER_BLOCK)<=end);
+		if(index>end) {
+			throw new RuntimeException("Out of block size.");
 		}
 		_reset();
-		return !eof;
+		return index;
 	}
 
 	/**
-	 * private method
 	 * @param l	 Must be in multiples of 512
 	 * @throws IOException
 	 */
-	private void seek(long l) throws IOException {
+	public synchronized void seek(long l) throws IOException {
 		((Seekable)in).seek(l);
 	}
 
@@ -299,7 +318,8 @@ public class TarInputStream extends FilterInputStream {
 	 * Returns the current offset (in bytes) from the beginning of the stream.
 	 * This can be used to find out at which point in a tar file an entry's content begins, for instance.
 	 */
-	public long getCurrentOffset() {
-		return bytesRead;
+
+	public synchronized long getPos() throws IOException{
+		return ((Seekable)in).getPos();
 	}
 }
