@@ -17,6 +17,7 @@
 
 package com.sun.hadoopdemo.tar;
 
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
 import java.io.DataInput;
@@ -239,7 +240,7 @@ public class TarHeader implements WritableComparable<TarHeader> {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        out.writeChars(name.toString());
+        Text.writeString(out, name.toString());
         out.writeInt(mode);
         out.writeInt(userId);
         out.writeInt(groupId);
@@ -247,17 +248,31 @@ public class TarHeader implements WritableComparable<TarHeader> {
         out.writeLong(modTime);
         out.writeInt(checkSum);
         out.writeByte(linkFlag);
-        out.writeChars(linkName.toString());
-        out.writeChars(magic.toString());
-        out.writeChars(userName.toString());
-        out.writeChars(groupName.toString());
+        Text.writeString(out, linkName.toString());
+        Text.writeString(out, magic.toString());
+        Text.writeString(out, userName.toString());
+        Text.writeString(out, groupName.toString());
         out.writeInt(devMajor);
         out.writeInt(devMinor);
-        out.writeChars(namePrefix.toString());
+        Text.writeString(out, namePrefix.toString());
     }
 
     @Override
     public void readFields(DataInput in) throws IOException {
-//        name.append(in.read)
+        name = new StringBuffer(Text.readString(in));
+        mode = in.readInt();
+        userId = in.readInt();
+        groupId = in.readInt();
+        size = in.readLong();
+        modTime = in.readLong();
+        checkSum = in.readInt();
+        linkFlag = in.readByte();
+        linkName = new StringBuffer(Text.readString(in));
+        magic = new StringBuffer(Text.readString(in));
+        userName = new StringBuffer(Text.readString(in));
+        groupName = new StringBuffer(Text.readString(in));
+        devMajor = in.readInt();
+        devMinor = in.readInt();
+        namePrefix = new StringBuffer(Text.readString(in));
     }
 }
