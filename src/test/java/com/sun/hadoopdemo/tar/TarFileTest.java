@@ -21,10 +21,10 @@ public class TarFileTest {
     @BeforeClass
     public static void setUp() throws IOException{
         Configuration conf=new Configuration();
-        conf.set("fs.default.name", "hdfs://192.168.0.14:9000");
-        conf.set("mapred.input.dir", "/usr/local/louis/tar/input/pic.tar");
-        conf.set("mapred.output.dir", "/usr/local/louis/tar/output");
-        Path path=new Path("/usr/local/louis/tar/input/pic.tar");
+        conf.set("fs.default.name", "hdfs://localhost:9000");
+        conf.set("mapred.input.dir", "/user/louis/input/test.tar");
+        conf.set("mapred.output.dir", "/user/louis/output");
+        Path path=new Path("/user/louis/input/test.tar");
         FileSystem fs= FileSystem.get(conf);
         reader=new TarFile.Reader(fs,path,conf);
     }
@@ -42,9 +42,9 @@ public class TarFileTest {
             System.out.println(reader.getCurrentEntry().getName());
             byte[] content=reader.getCurrentEntry().getContent();
             System.out.println(content.length);
-            FileOutputStream fileOutputStream = new FileOutputStream("D:/test/tt_" + (i++) + ".jpg");
-            fileOutputStream.write(content,0,content.length);
-            fileOutputStream.close();
+//            FileOutputStream fileOutputStream = new FileOutputStream("D:/test/tt_" + (i++) + ".jpg");
+//            fileOutputStream.write(content,0,content.length);
+//            fileOutputStream.close();
 
 //            System.out.println(new String(content,0,content.length));
         }

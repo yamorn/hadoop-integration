@@ -13,15 +13,11 @@ import java.io.IOException;
 public class TarFile {
 
     public static class Reader implements java.io.Closeable{
-        private Path file;
-        private Configuration conf;
         private TarInputStream in;
 
         public Reader(FileSystem fs, Path file, Configuration conf)
                 throws IOException {
-            this.file = file;
             this.in = new TarInputStream(openFile(fs, file, conf.getInt("io.file.buffer.size", 4096)));
-            this.conf = conf;
         }
 
         protected FSDataInputStream openFile(FileSystem fs, Path file, int bufferSize)
@@ -29,25 +25,32 @@ public class TarFile {
             return fs.open(file, bufferSize);
         }
 
-        public synchronized TarEntry getNextEntry() throws IOException {
-            return in.getNextEntry();
-        }
-
         public synchronized boolean hasNextEntry() throws IOException{
             return in.hasNextTarEntry();
         }
 
-        public synchronized long getCurrentOffset() {
-            return in.getCurrentOffset();
+        public synchronized long getCurrentOffset() throws IOException{
+            return in.getPos();
 
         }
 
-        public TarEntry getCurrentEntry(){
+        public synchronized TarEntry getCurrentEntry(){
             return in.getCurrentEntry();
+        }
+
+        public synchronized void seek(long l) throws IOException{
+            in.seek(l);
         }
 
         public synchronized void close() throws IOException {
             in.close();
+        }
+        public synchronized long skip(long l) throws IOException{
+            return in.skip(l);
+        }
+
+        public synchronized long indexTarEntryHeader(long offset,long end) throws IOException {
+            return in.indexTarEntryHeader(offset, end);
         }
     }
 }

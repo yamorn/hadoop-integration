@@ -1,19 +1,3 @@
-/**
- * Copyright 2012 Kamran Zafar 
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at 
- *
- *      http://www.apache.org/licenses/LICENSE-2.0 
- *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and 
- * limitations under the License. 
- *
- */
 
 package com.sun.hadoopdemo.tar;
 
@@ -195,7 +179,7 @@ public class TarHeader implements WritableComparable<TarHeader> {
      * @param size    File size in bytes
      * @param modTime Last modification time in numeric Unix time format
      * @param dir     Is directory
-     * @return
+     * @return TarHeader
      */
     public static TarHeader createHeader(String entryName, long size, long modTime, boolean dir) {
         String name = entryName;
@@ -234,9 +218,10 @@ public class TarHeader implements WritableComparable<TarHeader> {
 
     @Override
     public int compareTo(TarHeader o) {
-        return (int)(this.modTime-o.modTime);
+        return -1;
+//        return this.name.toString().compareToIgnoreCase(o.name.toString());
+//        return (int) (this.modTime - o.modTime);
     }
-
 
     @Override
     public void write(DataOutput out) throws IOException {
