@@ -1,19 +1,3 @@
-/**
- * Copyright 2012 Kamran Zafar 
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at 
- *
- *      http://www.apache.org/licenses/LICENSE-2.0 
- *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and 
- * limitations under the License. 
- *
- */
 
 package com.sun.hadoopdemo.tar;
 
@@ -21,44 +5,41 @@ import org.apache.hadoop.io.WritableComparable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
 /**
  * @author Kamran Zafar,Louis
- *
  */
 public class TarEntry implements WritableComparable<TarEntry> {
 	protected TarHeader header;
 	protected byte[] content;
 
 	private TarEntry() {
-		content=null;
+		content = null;
 		header = new TarHeader();
 	}
 
-	public TarEntry(byte[] headerBuf,byte[] content) {
+	public TarEntry(byte[] headerBuf, byte[] content) {
 		this();
 		this.parseTarHeader(headerBuf);
-		this.content=content;
+		this.content = content;
 	}
 
 	/**
 	 * Constructor to create an entry from an existing TarHeader object.
-	 *
+	 * <p/>
 	 * This method is useful to add new entries programmatically (e.g. for
 	 * adding files or directories that do not exist in the file system).
-	 *
-	 *
 	 */
-	public TarEntry(byte[] headerBuf){
+	public TarEntry(byte[] headerBuf) {
 		this();
 		this.parseTarHeader(headerBuf);
 	}
-	public TarEntry(TarHeader header,byte[] content) {
+
+	public TarEntry(TarHeader header, byte[] content) {
 		this.header = header;
-		this.content=content;
+		this.content = content;
 	}
 
 	public boolean equals(TarEntry it) {
@@ -149,9 +130,9 @@ public class TarEntry implements WritableComparable<TarEntry> {
 	}
 
 	/**
-	 * Checks if the org.kamrazafar.jtar entry is a directory
+	 * Checks if the tar entry is a directory
 	 *
-	 * @return
+	 * @return Boolean
 	 */
 	public boolean isDirectory() {
 
@@ -214,7 +195,7 @@ public class TarEntry implements WritableComparable<TarEntry> {
 		offset = Octal.getOctalBytes(header.devMinor, outbuf, offset, TarHeader.USTAR_DEVLEN);
 		offset = TarHeader.getNameBytes(header.namePrefix, outbuf, offset, TarHeader.USTAR_FILENAME_PREFIX);
 
-		for (; offset < outbuf.length;)
+		for (; offset < outbuf.length; )
 			outbuf[offset++] = 0;
 
 		long checkSum = this.computeCheckSum(outbuf);
@@ -281,7 +262,7 @@ public class TarEntry implements WritableComparable<TarEntry> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		byte[] header=new byte[TarConstants.HEADER_BLOCK];
+		byte[] header = new byte[TarConstants.HEADER_BLOCK];
 		writeEntryHeader(header);
 		// step 1
 		out.write(header);
@@ -291,14 +272,14 @@ public class TarEntry implements WritableComparable<TarEntry> {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		byte[] header=new byte[TarConstants.HEADER_BLOCK];
+		byte[] header = new byte[TarConstants.HEADER_BLOCK];
 		// step 1
 		in.readFully(header);
 
 		// step 2
 		parseTarHeader(header);
-		byte[] content = new byte[(int)this.header.size];
+		byte[] content = new byte[(int) this.header.size];
 		in.readFully(content);
-		this.content=content;
+		this.content = content;
 	}
 }
