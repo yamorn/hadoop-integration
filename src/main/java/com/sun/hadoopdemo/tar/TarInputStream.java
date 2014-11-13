@@ -261,27 +261,40 @@ public class TarInputStream extends FilterInputStream {
 		return getNextEntry() != null;
 	}
 
+	/**
+	 * Ugly method , May be you can make it more better.
+	 * @param offset
+	 * @param end
+	 * @return
+	 * @throws IOException
+	 */
 	public synchronized long indexTarEntryHeader(long offset, long end) throws IOException {
 		_mark((int) offset);
 		long index = offset;
-		byte[] header = new byte[TarConstants.HEADER_BLOCK];
-		byte[] theader = new byte[TarConstants.HEADER_BLOCK];
+		byte[] header,theader;
+		int rd=0;
+		boolean fg=true;
 		do {
+			header = new byte[TarConstants.HEADER_BLOCK];
+			theader = new byte[TarConstants.HEADER_BLOCK];
 			int tr = 0;
 			// Read full header
 			while (tr < TarConstants.HEADER_BLOCK) {
 				int res = read(theader, 0, TarConstants.HEADER_BLOCK - tr);
 
 				if (res < 0) {
+					fg=false;
 					break;
 				}
 
 				System.arraycopy(theader, 0, header, tr, res);
 				tr += res;
+				rd=tr;
 			}
-		} while (!TarUtils.isTarEntryHeader(header) && (index = index + TarConstants.HEADER_BLOCK) <= end);
+		} while (!TarUtils.isTarEntryHeader(header)  && ((index = index + rd)<= end) && fg );
+
 		if (index > end) {
-			throw new RuntimeException("Out of block size.");
+			return -1;
 		}
 		_reset();
 		return index;
