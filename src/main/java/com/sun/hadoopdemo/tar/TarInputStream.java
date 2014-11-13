@@ -1,25 +1,8 @@
-/**
- * Copyright 2012 Kamran Zafar 
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at 
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and 
- * limitations under the License. 
- * 
- */
 
 package com.sun.hadoopdemo.tar;
 
 import org.apache.hadoop.fs.PositionedReadable;
 import org.apache.hadoop.fs.Seekable;
-import org.apache.tools.tar.*;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -27,7 +10,6 @@ import java.io.InputStream;
 
 /**
  * @author Kamran Zafar,Louis
- * 
  */
 public class TarInputStream extends FilterInputStream {
 	private static final int SKIP_BUFFER_SIZE = 2048;
@@ -40,7 +22,7 @@ public class TarInputStream extends FilterInputStream {
 
 	public TarInputStream(InputStream in) {
 		super(in);
-		if( !(in instanceof Seekable) || !(in instanceof PositionedReadable) ) {
+		if (!(in instanceof Seekable) || !(in instanceof PositionedReadable)) {
 			throw new IllegalArgumentException(
 					"In is not an instance of Seekable or PositionedReadable");
 		}
@@ -63,27 +45,29 @@ public class TarInputStream extends FilterInputStream {
 
 	/**
 	 * private method
-	 * @param readlimit	Must be in multiples of 512
+	 *
+	 * @param readlimit Must be in multiples of 512
 	 */
-	private synchronized void _mark(int readlimit){
-		readPastMark=readlimit;
-		markCurrentEntry=currentEntry;
-		markCurrentFileSize=currentFileSize;
+	private synchronized void _mark(int readlimit) {
+		readPastMark = readlimit;
+		markCurrentEntry = currentEntry;
+		markCurrentFileSize = currentFileSize;
 	}
 
 	/**
 	 * private method
+	 *
 	 * @throws IOException
 	 */
-	private synchronized void _reset() throws IOException{
+	private synchronized void _reset() throws IOException {
 		seek(readPastMark);
-		currentEntry=markCurrentEntry;
-		currentFileSize=markCurrentFileSize;
+		currentEntry = markCurrentEntry;
+		currentFileSize = markCurrentFileSize;
 	}
 
 	/**
 	 * Read a byte
-	 * 
+	 *
 	 * @see java.io.FilterInputStream#read()
 	 */
 	@Override
@@ -103,8 +87,7 @@ public class TarInputStream extends FilterInputStream {
 	/**
 	 * Checks if the bytes being read exceed the entry size and adjusts the byte
 	 * array length. Updates the byte counters
-	 * 
-	 * 
+	 *
 	 * @see java.io.FilterInputStream#read(byte[], int, int)
 	 */
 	@Override
@@ -130,7 +113,7 @@ public class TarInputStream extends FilterInputStream {
 
 	/**
 	 * Returns the next entry in the tar file
-	 * 
+	 *
 	 * @return TarEntry
 	 * @throws java.io.IOException
 	 */
@@ -164,23 +147,22 @@ public class TarInputStream extends FilterInputStream {
 			_mark((int) getPos());
 
 			long realSize = Octal.parseOctal(header, 124, 12);
-			byte[] content=new byte[(int)realSize];
+			byte[] content = new byte[(int) realSize];
 			//read content
-			int d=super.read(content, 0, (int) realSize);
-			if(d==-1){
+			int d = super.read(content, 0, (int) realSize);
+			if (d == -1) {
 				// I suspect file corruption
 				throw new IOException("Possible tar file corruption");
 			}
 			_reset();
-			currentEntry = new TarEntry(header,content);
+			currentEntry = new TarEntry(header, content);
 		}
-		System.out.println("offset="+getPos());
 		return currentEntry;
 	}
 
 	/**
 	 * Closes the current tar entry
-	 * 
+	 *
 	 * @throws java.io.IOException
 	 */
 	protected synchronized void closeCurrentEntry() throws IOException {
@@ -208,7 +190,7 @@ public class TarInputStream extends FilterInputStream {
 
 	/**
 	 * Skips the pad at the end of each tar entry file content
-	 * 
+	 *
 	 * @throws java.io.IOException
 	 */
 	protected synchronized void skipPad() throws IOException {
@@ -228,7 +210,6 @@ public class TarInputStream extends FilterInputStream {
 	/**
 	 * Skips 'n' bytes on the InputStream
 	 * Overrides default implementation of skip
-	 * 
 	 */
 	@Override
 	public synchronized long skip(long n) throws IOException {
@@ -277,15 +258,15 @@ public class TarInputStream extends FilterInputStream {
 //		}
 //		_reset();
 //		return !eof;
-		return getNextEntry()!=null;
+		return getNextEntry() != null;
 	}
 
-	public synchronized long indexTarEntryHeader(long offset,long end) throws IOException{
-		_mark((int)offset);
-		long index=offset;
+	public synchronized long indexTarEntryHeader(long offset, long end) throws IOException {
+		_mark((int) offset);
+		long index = offset;
 		byte[] header = new byte[TarConstants.HEADER_BLOCK];
 		byte[] theader = new byte[TarConstants.HEADER_BLOCK];
-		do{
+		do {
 			int tr = 0;
 			// Read full header
 			while (tr < TarConstants.HEADER_BLOCK) {
@@ -298,8 +279,8 @@ public class TarInputStream extends FilterInputStream {
 				System.arraycopy(theader, 0, header, tr, res);
 				tr += res;
 			}
-		}while(!TarUtils.isTarEntryHeader(header)&&(index=index+TarConstants.HEADER_BLOCK)<=end);
-		if(index>end) {
+		} while (!TarUtils.isTarEntryHeader(header) && (index = index + TarConstants.HEADER_BLOCK) <= end);
+		if (index > end) {
 			throw new RuntimeException("Out of block size.");
 		}
 		_reset();
@@ -307,11 +288,11 @@ public class TarInputStream extends FilterInputStream {
 	}
 
 	/**
-	 * @param l	 Must be in multiples of 512
+	 * @param l Must be in multiples of 512
 	 * @throws IOException
 	 */
 	public synchronized void seek(long l) throws IOException {
-		((Seekable)in).seek(l);
+		((Seekable) in).seek(l);
 	}
 
 	/**
@@ -319,7 +300,7 @@ public class TarInputStream extends FilterInputStream {
 	 * This can be used to find out at which point in a tar file an entry's content begins, for instance.
 	 */
 
-	public synchronized long getPos() throws IOException{
-		return ((Seekable)in).getPos();
+	public synchronized long getPos() throws IOException {
+		return ((Seekable) in).getPos();
 	}
 }
