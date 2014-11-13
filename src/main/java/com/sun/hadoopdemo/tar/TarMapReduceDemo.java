@@ -1,23 +1,26 @@
 package com.sun.hadoopdemo.tar;
 
 import com.sun.hadoopdemo.tarmapreduce.TarFileInputFormat;
-import com.sun.hadoopdemo.util.ImageUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 /**
  * Created by louis on 2014/11/11.
  */
 public class TarMapReduceDemo {
-    private final static String OUTPUT_DIR = "D:/test/";
+    private final static String OUTPUT_DIR = "D:/test/ee/";
+
     public static class TarMapper extends Mapper<TarHeader, TarEntry, TarHeader, TarEntry> {
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
@@ -26,7 +29,7 @@ public class TarMapReduceDemo {
 
         @Override
         protected void map(TarHeader key, TarEntry value, Context context) throws IOException, InterruptedException {
-            System.out.printf("Map File:%s\n",value.getName());
+            System.out.printf("Map File:%s\n", value.getName());
             context.write(key, value);
         }
 
@@ -37,8 +40,9 @@ public class TarMapReduceDemo {
     }
 
     public static class TarReduce extends Reducer<TarHeader, TarEntry, Text, Text> {
-        private static Text keyOut=new Text();
-        private static Text valueOut=new Text();
+        private static Text keyOut = new Text();
+        private static Text valueOut = new Text();
+
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             super.setup(context);
@@ -46,15 +50,19 @@ public class TarMapReduceDemo {
 
         @Override
         protected void reduce(TarHeader key, Iterable<TarEntry> values, Context context) throws IOException, InterruptedException {
-            String fileName=key.name.toString();
+            String fileName = key.name.toString();
             keyOut.set(fileName);
-            int i=1;
+            int i = 1;
             try {
                 for (TarEntry entry : values) {
-                    System.out.println("name="+entry.getName()+", length="+entry.getContent().length);
-//                    System.out.println(entry.getContent().length+"+++++++++++");
-//                    byte[] content=entry.getContent();
-////                    ImageUtils.pressText("水印 水印",content,OUTPUT_DIR+fileName+"_"+i+".jpg","宋体", Font.BOLD, Color.white, 80, 0, 0, 0.5f);
+                    System.out.println("filename:"+entry.getName()+" size:"+(entry!=null?entry.getSize():"null")+" content:"+entry.getContent().length);
+                    byte[] content = entry.getContent();
+                    try (ByteArrayInputStream in = new ByteArrayInputStream(content);
+                         FileOutputStream out = new FileOutputStream(new File(OUTPUT_DIR + entry.getName()))) {
+                        IOUtils.copyBytes(in, out, 2048, false);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
 //                    ImageUtils.gray(content, OUTPUT_DIR + fileName + "_" + i + ".jpg");
                     ++i;
                 }
@@ -71,15 +79,12 @@ public class TarMapReduceDemo {
             super.cleanup(context);
         }
     }
-    public static void main(String[] args) throws Exception{
-        Configuration conf = new Configuration();
-//        System.setProperty("HADOOP_USER_NAME", "hadoop");
-        String otherArgs[] = new String[]{
-//                "hdfs://192.168.0.14:9000/usr/local/louis/tar/input/test.tar",
-//                "hdfs://192.168.0.14:9000/usr/local/louis/tar/output"
-                "hdfs://localhost:9000/user/louis/input/pic.tar",
-                "hdfs://localhost:9000/user/louis/output"
 
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        String otherArgs[] = new String[]{
+                "hdfs://192.168.0.14:9000/usr/local/louis/tar/input/zz.tar",
+                "hdfs://192.168.0.14:9000/usr/local/louis/tar/output"
         };
         Job job = new Job(conf, "TarMapReduceDemo");
         job.setJarByClass(TarMapReduceDemo.class);
@@ -96,7 +101,7 @@ public class TarMapReduceDemo {
         job.setInputFormatClass(TarFileInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
 
-        FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
+        TarFileInputFormat.addInputPath(job, new Path(otherArgs[0]));
         TextOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
 
         System.exit(job.waitForCompletion(true) ? 0 : 1);
