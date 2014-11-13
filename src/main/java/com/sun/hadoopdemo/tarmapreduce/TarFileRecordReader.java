@@ -36,9 +36,9 @@ public class TarFileRecordReader extends RecordReader<TarHeader, TarEntry> {
         end = fileSplit.getStart() + fileSplit.getLength();
         if (start != 0) {
             in.seek(start);
-            long index = in.indexTarEntryHeader(start, end);
-            in.skip(index - start);
-            start = index;
+//            long index = in.indexTarEntryHeader(start, end);
+//            in.skip(index - start);
+//            start = index;
         }
         logger.log(Level.INFO, "Split initialize: start at " + start + " , end at " + end);
     }
