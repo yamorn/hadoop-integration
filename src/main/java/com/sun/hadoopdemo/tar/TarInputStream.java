@@ -262,7 +262,7 @@ public class TarInputStream extends FilterInputStream {
 	}
 
 	/**
-	 * Ugly method , May be you can make it more better.
+	 * Ugly method , May be you can make it much better.
 	 * @param offset
 	 * @param end
 	 * @return
