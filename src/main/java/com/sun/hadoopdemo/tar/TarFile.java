@@ -2,8 +2,10 @@ package com.sun.hadoopdemo.tar;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.Progressable;
 
 import java.io.IOException;
 
@@ -53,5 +55,31 @@ public class TarFile {
         public synchronized long indexTarEntryHeader(long offset, long end) throws IOException {
             return in.indexTarEntryHeader(offset, end);
         }
+    }
+
+    public static class Writer implements java.io.Serializable{
+        private static final int WRITER_BUFFER=4096;
+        private FSDataOutputStream out;
+        private FileSystem fs;
+
+        public Writer(FileSystem fs)
+                throws IOException {
+            this.fs = fs;
+        }
+
+        public synchronized void writeEntry(Path path,TarEntry entry) throws IOException{
+            out=fs.create(path, true, WRITER_BUFFER);
+            byte[] data=entry.getContent();
+            out.write(data, 0, data.length);
+            out.flush();
+            out.close();
+        }
+
+        public synchronized void close() throws IOException{
+            if(out!=null){
+                out.close();
+            }
+        }
+
     }
 }

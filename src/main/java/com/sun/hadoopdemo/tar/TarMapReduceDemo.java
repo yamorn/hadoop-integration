@@ -1,6 +1,7 @@
 package com.sun.hadoopdemo.tar;
 
 import com.sun.hadoopdemo.tarmapreduce.TarFileInputFormat;
+import com.sun.hadoopdemo.tarmapreduce.TarOutputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
@@ -39,9 +40,9 @@ public class TarMapReduceDemo {
         }
     }
 
-    public static class TarReduce extends Reducer<TarHeader, TarEntry, Text, Text> {
+    public static class TarReduce extends Reducer<TarHeader, TarEntry, TarHeader, TarEntry> {
         private static Text keyOut = new Text();
-        private static Text valueOut = new Text();
+//        private static Text valueOut = new Text();
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
@@ -53,25 +54,28 @@ public class TarMapReduceDemo {
             String fileName = key.name.toString();
             keyOut.set(fileName);
             int i = 1;
+            TarEntry valueOut=null;
             try {
                 for (TarEntry entry : values) {
+                    valueOut=entry;
                     System.out.println("filename:"+entry.getName()+" size:"+(entry!=null?entry.getSize():"null")+" content:"+entry.getContent().length);
-                    byte[] content = entry.getContent();
-                    try (ByteArrayInputStream in = new ByteArrayInputStream(content);
-                         FileOutputStream out = new FileOutputStream(new File(OUTPUT_DIR + entry.getName()))) {
-                        IOUtils.copyBytes(in, out, 2048, false);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+//                    byte[] content = entry.getContent();
+//                    try (ByteArrayInputStream in = new ByteArrayInputStream(content);
+//                         FileOutputStream out = new FileOutputStream(new File(OUTPUT_DIR + entry.getName()))) {
+//                        IOUtils.copyBytes(in, out, 2048, false);
+//                    } catch (Exception e) {
+//                        throw new RuntimeException(e);
+//                    }
 //                    ImageUtils.gray(content, OUTPUT_DIR + fileName + "_" + i + ".jpg");
                     ++i;
                 }
             } catch (Exception e) {
 //                e.printStackTrace();
-                valueOut.set("ERROR");
+//                valueOut.set("ERROR");
             }
-            valueOut.set("OK");
-            context.write(keyOut, valueOut);
+//            valueOut.set("OK");
+//            valueOut.set(values[0]);
+            context.write(key, valueOut);
         }
 
         @Override
@@ -83,8 +87,8 @@ public class TarMapReduceDemo {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         String otherArgs[] = new String[]{
-                "hdfs://192.168.0.14:9000/usr/local/louis/tar/input/zz.tar",
-                "hdfs://192.168.0.14:9000/usr/local/louis/tar/output"
+                "hdfs://localhost:9000/user/louis/input/test.tar",
+                "hdfs://localhost:9000/user/louis/output"
         };
         Job job = new Job(conf, "TarMapReduceDemo");
         job.setJarByClass(TarMapReduceDemo.class);
@@ -99,10 +103,10 @@ public class TarMapReduceDemo {
         job.setOutputValueClass(Text.class);
 
         job.setInputFormatClass(TarFileInputFormat.class);
-        job.setOutputFormatClass(TextOutputFormat.class);
+        job.setOutputFormatClass(TarOutputFormat.class);
 
         TarFileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-        TextOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+        TarOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
 
         System.exit(job.waitForCompletion(true) ? 0 : 1);
 
