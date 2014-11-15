@@ -232,40 +232,14 @@ public class TarInputStream extends FilterInputStream {
 	}
 
 	public synchronized boolean hasNextTarEntry() throws IOException {
-//		_mark((int)bytesRead);
-//		closeCurrentEntry();
-//		byte[] header = new byte[TarConstants.HEADER_BLOCK];
-//		byte[] theader = new byte[TarConstants.HEADER_BLOCK];
-//		int tr = 0;
-//
-//		// Read full header
-//		while (tr < TarConstants.HEADER_BLOCK) {
-//			int res = super.read(theader, 0, TarConstants.HEADER_BLOCK - tr);
-//			if (res < 0) {
-//				break;
-//			}
-//			System.arraycopy(theader, 0, header, tr, res);
-//			tr += res;
-//		}
-//
-//		// Check if record is null
-//		boolean eof = true;
-//		for (byte b : header) {
-//			if (b != 0) {
-//				eof = false;
-//				break;
-//			}
-//		}
-//		_reset();
-//		return !eof;
 		return getNextEntry() != null;
 	}
 
 	/**
 	 * Ugly method , May be you can make it much better.
-	 * @param offset
-	 * @param end
-	 * @return
+	 * @param offset	start index
+	 * @param end		end index
+	 * @return			tar entry start index
 	 * @throws IOException
 	 */
 	public synchronized long indexTarEntryHeader(long offset, long end) throws IOException {
