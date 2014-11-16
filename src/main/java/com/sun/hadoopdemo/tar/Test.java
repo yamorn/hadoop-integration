@@ -10,14 +10,14 @@ import java.nio.file.Paths;
  */
 public class Test {
     public static void main(String[] args) {
-        Path src = Paths.get("/home/louis/test/pic/zzz.jpg");
-        for(int i=1;i<=40;i++) {
-            Path dst = Paths.get("/home/louis/test/pic/zzz_" + i + ".jpg");
-            try {
-                Files.copy(src,dst);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+//        Path src = Paths.get("/home/louis/test/pic/zzz.jpg");
+//        for(int i=1;i<=40;i++) {
+//            Path dst = Paths.get("/home/louis/test/pic/zzz_" + i + ".jpg");
+//            try {
+//                Files.copy(src,dst);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
     }
 }
