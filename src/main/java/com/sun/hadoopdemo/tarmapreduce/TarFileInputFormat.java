@@ -58,12 +58,17 @@ public class TarFileInputFormat extends FileInputFormat<TarHeader, TarEntry> {
                     }
                     long p=blockSize*(i+1);
                     tarInputStream.seek(p);
-                    long headerPos = tarInputStream.indexTarEntryHeader(p, blockSize+p);
+                    long spanLength=blockSize+p;
+                    if(spanLength>file.getLen()){
+                        spanLength=file.getLen();
+                    }
+                    long headerPos = tarInputStream.indexTarEntryHeader(p, spanLength);
                     if(headerPos==-1){
                         continue;
                     }
                     startIndex = getBlockIndex(blkLocations, bytesRead);
                     endIndex = getBlockIndex(blkLocations, headerPos);
+
                     for (int j = startIndex; j <= endIndex; j++) {
                         String[] blkHosts = blkLocations[j].getHosts();
                         for (int k = 0; k < blkHosts.length; k++)

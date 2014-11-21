@@ -6,6 +6,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -40,9 +41,8 @@ public class TarMapReduceDemo {
         }
     }
 
-    public static class TarReduce extends Reducer<TarHeader, TarEntry, TarHeader, TarEntry> {
-        private static Text keyOut = new Text();
-//        private static Text valueOut = new Text();
+    public static class TarReduce extends Reducer<TarHeader, TarEntry, Text, TarEntry> {
+        private static Text keyOut = new Text("test"); //path prefix
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
@@ -51,31 +51,16 @@ public class TarMapReduceDemo {
 
         @Override
         protected void reduce(TarHeader key, Iterable<TarEntry> values, Context context) throws IOException, InterruptedException {
-            String fileName = key.name.toString();
-            keyOut.set(fileName);
-            int i = 1;
             TarEntry valueOut=null;
             try {
                 for (TarEntry entry : values) {
                     valueOut=entry;
                     System.out.println("filename:"+entry.getName()+" size:"+(entry!=null?entry.getSize():"null")+" content:"+entry.getContent().length);
-//                    byte[] content = entry.getContent();
-//                    try (ByteArrayInputStream in = new ByteArrayInputStream(content);
-//                         FileOutputStream out = new FileOutputStream(new File(OUTPUT_DIR + entry.getName()))) {
-//                        IOUtils.copyBytes(in, out, 2048, false);
-//                    } catch (Exception e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                    ImageUtils.gray(content, OUTPUT_DIR + fileName + "_" + i + ".jpg");
-                    ++i;
                 }
             } catch (Exception e) {
-//                e.printStackTrace();
-//                valueOut.set("ERROR");
+                e.printStackTrace();
             }
-//            valueOut.set("OK");
-//            valueOut.set(values[0]);
-            context.write(key, valueOut);
+            context.write(keyOut, valueOut);
         }
 
         @Override
@@ -85,14 +70,16 @@ public class TarMapReduceDemo {
     }
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("HADOOP_USER_NAME", "hadoop");
         Configuration conf = new Configuration();
+        conf.setBoolean("fs.hdfs.impl.disable.cache", true);
+        conf.set("fs.default.name", "hdfs://192.168.1.10:9000");
         String otherArgs[] = new String[]{
-                "hdfs://localhost:9000/user/louis/input/test.tar",
-                "hdfs://localhost:9000/user/louis/output"
+                "/user/hadoop/file.tar",
+                "/user/hadoop/output"
         };
         Job job = new Job(conf, "TarMapReduceDemo");
         job.setJarByClass(TarMapReduceDemo.class);
-
         job.setMapperClass(TarMapper.class);
         job.setReducerClass(TarReduce.class);
 
@@ -100,7 +87,7 @@ public class TarMapReduceDemo {
         job.setMapOutputValueClass(TarEntry.class);
 
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(Text.class);
+        job.setOutputValueClass(TarEntry.class);
 
         job.setInputFormatClass(TarFileInputFormat.class);
         job.setOutputFormatClass(TarOutputFormat.class);
