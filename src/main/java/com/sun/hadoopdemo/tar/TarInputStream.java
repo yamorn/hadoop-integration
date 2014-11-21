@@ -48,7 +48,7 @@ public class TarInputStream extends FilterInputStream {
 	 *
 	 * @param readlimit Must be in multiples of 512
 	 */
-	private synchronized void _mark(int readlimit) {
+	private synchronized void _mark(long readlimit) {
 		readPastMark = readlimit;
 		markCurrentEntry = currentEntry;
 		markCurrentFileSize = currentFileSize;
@@ -144,7 +144,7 @@ public class TarInputStream extends FilterInputStream {
 		}
 
 		if (!eof) {
-			_mark((int) getPos());
+			_mark(getPos());
 
 			long realSize = Octal.parseOctal(header, 124, 12);
 			byte[] content = new byte[(int) realSize];
@@ -243,7 +243,7 @@ public class TarInputStream extends FilterInputStream {
 	 * @throws IOException
 	 */
 	public synchronized long indexTarEntryHeader(long offset, long end) throws IOException {
-		_mark((int) offset);
+		_mark(offset);
 		long index = offset;
 		byte[] header,theader;
 		int rd=0;
