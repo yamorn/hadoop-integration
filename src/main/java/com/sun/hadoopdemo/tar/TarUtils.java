@@ -95,8 +95,26 @@ public class TarUtils {
 	}
 
 	public static boolean isTarEntryHeader(byte[] header) {
+		boolean result = false;
+
+		// step 1: validate magic
 		String magic = TarHeader.parseName(header, 257, 8).toString();
-		return "ustar  ".equals(magic);
+		result = "ustar  ".equals(magic);
+		if(result) return true;
+
+		// step 2: validate checksum
+		long sum = 0;
+		for (int i = 0; i < header.length; ++i) {
+			if (i > 148 && i < 156) {
+				sum += (char) ' ';
+				continue;
+			}
+			sum += 255 & header[i];
+		}
+
+		long checkSum = Octal.parseOctal(header, 148, 8);
+		result = checkSum == sum;
+		return result;
 	}
 	private static long computeCheckSum(byte[] buf) {
 		long sum = 0L;
