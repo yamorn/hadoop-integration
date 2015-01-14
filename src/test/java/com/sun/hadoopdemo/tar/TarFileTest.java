@@ -18,16 +18,16 @@ import static org.junit.Assert.*;
 @RunWith(JUnit4.class)
 public class TarFileTest {
     private static TarFile.Reader reader;
-    @BeforeClass
-    public static void setUp() throws IOException{
-        Configuration conf=new Configuration();
-        conf.set("fs.default.name", "hdfs://localhost:9000");
-        conf.set("mapred.input.dir", "/user/louis/input/test.tar");
-        conf.set("mapred.output.dir", "/user/louis/output");
-        Path path=new Path("/user/louis/input/test.tar");
-        FileSystem fs= FileSystem.get(conf);
-        reader=new TarFile.Reader(fs,path,conf);
-    }
+//    @BeforeClass
+//    public static void setUp() throws IOException{
+//        Configuration conf=new Configuration();
+//        conf.set("fs.default.name", "hdfs://localhost:9000");
+//        conf.set("mapred.input.dir", "/user/louis/input/test.tar");
+//        conf.set("mapred.output.dir", "/user/louis/output");
+//        Path path=new Path("/user/louis/input/test.tar");
+//        FileSystem fs= FileSystem.get(conf);
+//        reader=new TarFile.Reader(fs,path,conf);
+//    }
 
     @Test
     @Ignore
@@ -36,6 +36,7 @@ public class TarFileTest {
         assertNotNull(entry);
     }
     @Test
+    @Ignore
     public void hasNextEntryTest() throws IOException {
         int i=1;
         while (reader.hasNextEntry()) {
@@ -49,8 +50,8 @@ public class TarFileTest {
 //            System.out.println(new String(content,0,content.length));
         }
     }
-    @AfterClass
-    public static void tearDown() throws IOException{
-        reader.close();
-    }
+//    @AfterClass
+//    public static void tearDown() throws IOException{
+//        reader.close();
+//    }
 }

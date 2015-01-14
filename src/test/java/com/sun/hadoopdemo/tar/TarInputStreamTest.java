@@ -22,16 +22,17 @@ import static org.junit.Assert.*;
 @RunWith(JUnit4.class)
 public class TarInputStreamTest {
     private static TarInputStream tarInputStream;
-    @BeforeClass
-    public static void init() throws IOException{
-        Configuration conf=new Configuration();
-        conf.set("fs.default.name", "hdfs://localhost:9000");
-        Path path=new Path("/user/louis/input/pic.tar");
-        FileSystem fs=FileSystem.get(URI.create("/"),conf);
-        tarInputStream = new TarInputStream(fs.open(path));
-//        FSDataInputStream
-    }
+//    @BeforeClass
+//    public static void init() throws IOException{
+//        Configuration conf=new Configuration();
+//        conf.set("fs.default.name", "hdfs://localhost:9000");
+//        Path path=new Path("/user/louis/input/pic.tar");
+//        FileSystem fs=FileSystem.get(URI.create("/"),conf);
+//        tarInputStream = new TarInputStream(fs.open(path));
+////        FSDataInputStream
+//    }
     @Test
+    @Ignore
     public void getCurrentEntryTest() throws IOException {
         TarEntry entry=null;
 //        while ((entry = tarInputStream.getNextEntry()) != null) {
@@ -70,9 +71,9 @@ public class TarInputStreamTest {
         long index=tarInputStream.indexTarEntryHeader(offset, 1000000);
         System.out.println(index+"====");
     }
-    @AfterClass
-    public static void clean() throws IOException{
-        if(tarInputStream!=null)
-            tarInputStream.close();
-    }
+//    @AfterClass
+//    public static void clean() throws IOException{
+//        if(tarInputStream!=null)
+//            tarInputStream.close();
+//    }
 }

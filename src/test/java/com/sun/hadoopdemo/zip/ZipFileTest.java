@@ -19,15 +19,15 @@ import static org.junit.Assert.assertNotNull;
 public class ZipFileTest {
     private static ZipFile.Reader reader;
 
-    @BeforeClass
-    public static void setUp() throws IOException {
-        Configuration conf = new Configuration();
-        conf.set("fs.default.name", "hdfs://192.168.0.14:9000");
-        conf.set("mapred.output.dir", "/usr/hadoop/output");
-        Path path = new Path("/user/hadoop/pic.zip");
-        FileSystem fs = FileSystem.get(conf);
-        reader = new ZipFile.Reader(fs, path, conf);
-    }
+//    @BeforeClass
+//    public static void setUp() throws IOException {
+//        Configuration conf = new Configuration();
+//        conf.set("fs.default.name", "hdfs://192.168.0.14:9000");
+//        conf.set("mapred.output.dir", "/usr/hadoop/output");
+//        Path path = new Path("/user/hadoop/pic.zip");
+//        FileSystem fs = FileSystem.get(conf);
+//        reader = new ZipFile.Reader(fs, path, conf);
+//    }
 
     @Test
     @Ignore
@@ -37,6 +37,7 @@ public class ZipFileTest {
     }
 
     @Test
+    @Ignore
     public void hasNextEntryTest() throws IOException {
         int i = 1;
         while (reader.hasNextEntry()) {
@@ -52,8 +53,8 @@ public class ZipFileTest {
         }
     }
 
-    @AfterClass
-    public static void tearDown() throws IOException {
-        reader.close();
-    }
+//    @AfterClass
+//    public static void tearDown() throws IOException {
+//        reader.close();
+//    }
 }
